@@ -492,33 +492,61 @@ class Cf7_Pipedrive {
 	}
 
 	public function set_submission_values() {
+	    $pipedrive_fields = array();
+	    $first_name = false; 
+	    $last_name = false;
+		
+	    foreach ($_POST as $key => $value) {
+	      if(strpos($key, 'pipedrive') !== false) {
+		$pipedrive_fields[$key] = $value;
+	      }
+	      if(strpos($key, 'name') !== false) {
+		$pipedrive_fields['name-pipedrive'] = $value;
+	      }
+	      if(strpos($key, 'email') !== false) {
+		$pipedrive_fields['email-pipedrive'] = $value;
+	      }
+	      if(strpos($key, 'phone') !== false) {
+		$pipedrive_fields['phone-pipedrive'] = $value;
+	      }
+	      if(strpos($key, 'company') !== false || strpos($key, 'company-name') !== false) {
+		$pipedrive_fields['company-pipedrive'] = $value;
+	      }
+	      // Special case where name is split
+	      if(strpos($key, 'first-name') !== false) {
+		$first_name = $value;
+	      }
+	      if(strpos($key, 'last-name') !== false) {
+		$last_name = $value;
+	      }
+	    }
 
-		$pipedrive_fields = array();
-
-		foreach ($_POST as $key => $value) {
-			if(strpos($key, 'pipedrive') !== false) {
-				$pipedrive_fields[$key] = $value;
-			}
-		}
-
-		// main data about the organization
-		$this->organization = array(
-			// I'm keeping this as so for now. Maybe add the functionality for organization later.
-		);
-
-		// main data about the person. org_id is added later dynamically
-		$this->person = array(
-			'name' => ( null !== $pipedrive_fields['name-pipedrive'] ? $pipedrive_fields['name-pipedrive'] : '' ),
-			'email' => ( null !== $pipedrive_fields['email-pipedrive'] ? $pipedrive_fields['email-pipedrive'] : '' ),
-			'phone' => ( null !== $pipedrive_fields['phone-pipedrive'] ? $pipedrive_fields['phone-pipedrive'] : '' )
-		);
-
-		// main data about the deal. person_id and org_id is added later dynamically
-		$this->deal = array(
-			'title' => ( '' !== $pipedrive_fields['title-pipedrive'] ? $pipedrive_fields['title-pipedrive'] : 'No Message Sent with Free Demo Request' ),
-			'stage_id' => ( null !== $this->cf7_pipedrive_stage ? $this->cf7_pipedrive_stage : '' ),
-			'user_id' => ( null !== $this->cf7_pipedrive_user ? $this->cf7_pipedrive_user : '' ),
-		);
+	    // For forms where the name is split:
+	    // Check for firstname and lastname values and concat them
+	    if($first_name && $last_name){
+	      $pipedrive_fields['name-pipedrive'] = $first_name . ' ' . $last_name;
+	    }
+	    // If no company set then deal title will be the name of the person
+	    if(empty($pipedrive_fields['company-pipedrive'])){
+	      $pipedrive_fields['company-pipedrive'] = $pipedrive_fields['name-pipedrive'];
+	    }
+	    // main data about the organization
+	    $this->organization = array(
+	      // I'm keeping this as so for now. Maybe add the functionality for organization later.
+	    );
+	    // main data about the person. org_id is added later dynamically
+	    $this->person = array(
+	      'name' => ( null !== $pipedrive_fields['name-pipedrive'] ? $pipedrive_fields['name-pipedrive'] : '' ),
+	      'email' => ( null !== $pipedrive_fields['email-pipedrive'] ? $pipedrive_fields['email-pipedrive'] : '' ),
+	      'phone' => ( null !== $pipedrive_fields['phone-pipedrive'] ? $pipedrive_fields['phone-pipedrive'] : '' )
+	    );
+		
+	    // main data about the deal. person_id and org_id is added later dynamically
+	    $this->deal = array(
+	      'title' => ( '' !== $pipedrive_fields['company-pipedrive'] ? $pipedrive_fields['company-pipedrive'] : '' ),
+	      'stage_id' => ( null !== $this->cf7_pipedrive_stage ? $this->cf7_pipedrive_stage : '' ),
+	      'user_id' => ( null !== $this->cf7_pipedrive_user ? $this->cf7_pipedrive_user : '' ),
+	    );
 	}
 
 	function make_pipedrive_request($type, $request_type = 'post', $return_object = false) {
